@@ -22,3 +22,6 @@ build-backend = "uv_build"
 dev = [
     "pre-commit>=4.6.2",
 ]
+
+[tool.ruff]
+extend-exclude = ["*/migrations/*"]
