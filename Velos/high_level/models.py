@@ -53,10 +53,12 @@ class Transport(models.Model):
     depart = models.ForeignKey(
         Lieu,
         on_delete=models.PROTECT,
+        related_name="transports_depart",
     )
     arrivee = models.ForeignKey(
         Lieu,
         on_delete=models.PROTECT,
+        related_name="transports_arrivee",
     )
 
 
