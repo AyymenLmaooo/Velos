@@ -7,6 +7,10 @@ class Pays(models.Model):
     tarif_electrique = models.IntegerField()
     salaire_minimum = models.IntegerField()
 
+    def __str__(self):
+        return self.nom
+
+
 
 class Ville(models.Model):
     nom = models.CharField(max_length=100)
@@ -17,6 +21,9 @@ class Ville(models.Model):
     prix_m2 = models.IntegerField()
     texe_immobiliere = models.IntegerField()
 
+    def __str__(self):
+        return self.nom
+
 
 class Machine(models.Model):
     nom = models.CharField(max_length=100)
@@ -25,6 +32,9 @@ class Machine(models.Model):
     cout_maintenance = models.IntegerField()
     superficie = models.IntegerField()
 
+    def __str__(self):
+        return self.nom
+
 
 class QuantiteMachine(models.Model):
     nombre = models.IntegerField()
@@ -32,6 +42,9 @@ class QuantiteMachine(models.Model):
         Machine,
         on_delete=models.PROTECT,
     )
+
+    def __str__(self):
+        return f"{self.nombre} x {self.machine}"
 
 
 class Lieu(models.Model):
@@ -43,6 +56,9 @@ class Lieu(models.Model):
     superficie = models.IntegerField()
     quantite_machines = models.ManyToManyField(QuantiteMachine)
     consommation_electrique = models.IntegerField()
+
+    def __str__(self):
+        return self.nom
 
 
 class Transport(models.Model):
@@ -61,22 +77,33 @@ class Transport(models.Model):
         related_name="transports_arrivee",
     )
 
+    def __str__(self):
+        return f"{self.depart} -> {self.arrivee}"
 
 class Operation(models.Model):
     nom = models.CharField(max_length=100)
     operation_suivante = models.ForeignKey(
         "self",
         on_delete=models.PROTECT,
+        blank=True,
     )
     cout = models.IntegerField()
     machine = models.ForeignKey(
         Machine,
         on_delete=models.PROTECT,
     )
-    quantite_produits = models.IntegerField()
+    quantite_produits = models.ForeignKey(
+        "QuantiteProduit",
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+    )
     heures_de_travail = models.IntegerField()
     consommation_electrique = models.IntegerField()
 
+
+    def __str__(self):
+        return self.nom
 
 class Produit(models.Model):
     nom = models.CharField(max_length=100)
@@ -86,17 +113,26 @@ class Produit(models.Model):
     operations = models.ManyToManyField(Operation)
 
 
+    def __str__(self):
+        return self.nom
+
+
 class QuantiteProduit(models.Model):
     nombre = models.IntegerField()
     produit = models.ForeignKey(
         Produit,
         on_delete=models.PROTECT,
     )
-
+    def __str__(self):
+        return f"{self.produit} x {self.nombre}"
 
 class Stock(models.Model):
     quantite_produits = models.ManyToManyField(QuantiteProduit)
     palettes_max = models.IntegerField()
+
+
+    def __str__(self):
+        return f"Stock {self.pk}"
 
 
 class PointDeVente(models.Model):
@@ -111,15 +147,22 @@ class PointDeVente(models.Model):
         on_delete=models.PROTECT,
     )
 
+    def __str__(self):
+        return self.nom
+
 
 class Facture(models.Model):
-    quantite_preoduits = models.ManyToManyField(QuantiteProduit)
+    quantite_produits = models.ManyToManyField(QuantiteProduit)
     reduction = models.IntegerField()
     point_de_vente = models.ForeignKey(
         PointDeVente,
         on_delete=models.PROTECT,
     )
     client = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"Facture {self.pk} - {self.client}"
+
 
 
 class PrixProduit(models.Model):
@@ -129,7 +172,12 @@ class PrixProduit(models.Model):
         on_delete=models.PROTECT,
     )
 
+    def __str__(self):
+        return f"{self.produit} - {self.prix_achat}"
+
 
 class Fournisseur(models.Model):
     nom = models.CharField(max_length=100)
     prix_produits = models.ManyToManyField(PrixProduit)
+    def __str__(self):
+        return self.nom
