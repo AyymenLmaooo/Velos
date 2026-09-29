@@ -86,6 +86,7 @@ class Operation(models.Model):
         "self",
         on_delete=models.PROTECT,
         blank=True,
+        null=True,
     )
     cout = models.IntegerField()
     machine = models.ForeignKey(
@@ -103,7 +104,7 @@ class Operation(models.Model):
 
 
     def __str__(self):
-        return self.nom
+        return str(self.nom)
 
 class Produit(models.Model):
     nom = models.CharField(max_length=100)
@@ -114,7 +115,7 @@ class Produit(models.Model):
 
 
     def __str__(self):
-        return self.nom
+        return str(self.nom)
 
 
 class QuantiteProduit(models.Model):
