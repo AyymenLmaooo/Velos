@@ -18,6 +18,94 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+import high_level.views
+
+
 urlpatterns = [
     path("admin/", admin.site.urls),
+
+
+path(
+        "pays/<int:pk>",
+        high_level.views.PaysDetailView.as_view(),
+        name="pays",
+    ),
+
+path(
+        "ville/<int:pk>",
+        high_level.views.VilleDetailView.as_view(),
+        name="ville",
+    ),
+
+path(
+        "machine/<int:pk>",
+        high_level.views.MachineDetailView.as_view(),
+        name="machine",
+    ),
+
+path(
+        "quantite-machine/<int:pk>",
+        high_level.views.QuantiteMachineDetailView.as_view(),
+        name="quantite-machine",
+    ),
+
+path(
+        "lieu/<int:pk>",
+        high_level.views.LieuDetailView.as_view(),
+        name="lieu",
+    ),
+
+path(
+        "transport/<int:pk>",
+        high_level.views.TransportDetailView.as_view(),
+        name="transport",
+    ),
+
+path(
+        "operation/<int:pk>",
+        high_level.views.OperationDetailView.as_view(),
+        name="operation",
+    ),
+
+path(
+        "produit/<int:pk>",
+        high_level.views.ProduitDetailView.as_view(),
+        name="produit",
+    ),
+
+path(
+        "quantite-produit/<int:pk>",
+        high_level.views.QuantiteProduitDetailView.as_view(),
+        name="quantite-produit",
+    ),
+
+path(
+        "stock/<int:pk>",
+        high_level.views.StockDetailView.as_view(),
+        name="stock",
+    ),
+
+path(
+        "point-de-vente/<int:pk>",
+        high_level.views.PointDeVenteDetailView.as_view(),
+        name="point-de-vente",
+    ),
+
+path(
+        "facture/<int:pk>",
+        high_level.views.FactureDetailView.as_view(),
+        name="facture",
+    ),
+
+path(
+        "prix-produit/<int:pk>",
+        high_level.views.PrixProduitDetailView.as_view(),
+        name="prix-produit",
+    ),
+
+path(
+        "fournisseur/<int:pk>",
+        high_level.views.FournisseurDetailView.as_view(),
+        name="fournisseur",
+    ),
 ]
