@@ -3,9 +3,9 @@ from django.db import models
 
 class Pays(models.Model):
     nom = models.CharField(max_length=100)
-    tva = models.IntegerField()
-    tarif_electrique = models.IntegerField()
-    salaire_minimum = models.IntegerField()
+    tva = models.FloatField()
+    tarif_electrique = models.FloatField()
+    salaire_minimum = models.FloatField()
 
     def __str__(self):
         return self.nom
@@ -18,8 +18,8 @@ class Ville(models.Model):
         Pays,
         on_delete=models.PROTECT,
     )
-    prix_m2 = models.IntegerField()
-    texe_immobiliere = models.IntegerField()
+    prix_m2 = models.FloatField()
+    taxe_immobiliere = models.FloatField()
 
     def __str__(self):
         return self.nom
@@ -27,13 +27,16 @@ class Ville(models.Model):
 
 class Machine(models.Model):
     nom = models.CharField(max_length=100)
-    prix = models.IntegerField()
-    duree_de_vie = models.IntegerField()
-    cout_maintenance = models.IntegerField()
-    superficie = models.IntegerField()
+    prix = models.FloatField()
+    duree_de_vie = models.FloatField()
+    cout_maintenance = models.FloatField()
+    superficie = models.FloatField()
 
     def __str__(self):
         return self.nom
+
+    def costs(self):
+        return self.prix + self.cout_maintenance
 
 
 class QuantiteMachine(models.Model):
@@ -45,6 +48,9 @@ class QuantiteMachine(models.Model):
 
     def __str__(self):
         return f"{self.nombre} x {self.machine}"
+
+    def costs(self):
+        return self.nombre * self.machine.costs()
 
 
 class Lieu(models.Model):
@@ -59,6 +65,13 @@ class Lieu(models.Model):
 
     def __str__(self):
         return self.nom
+
+    def costs(self):
+        return (
+            self.superficie * (self.ville.prix_m2 + self.ville.taxe_immobiliere)
+            + self.consommation_electrique * self.ville.pays.tarif_electrique
+            + sum(qm.costs() for qm in self.quantite_machines.all())
+        )
 
 
 class Transport(models.Model):
@@ -79,6 +92,9 @@ class Transport(models.Model):
 
     def __str__(self):
         return f"{self.depart} -> {self.arrivee}"
+
+    def costs(self):
+        return self.cout * self.nombre_palettes
 
 class Operation(models.Model):
     nom = models.CharField(max_length=100)
@@ -106,6 +122,9 @@ class Operation(models.Model):
     def __str__(self):
         return str(self.nom)
 
+    def costs(self):
+        return self.cout + self.heures_de_travail * self.consommation_electrique
+
 class Produit(models.Model):
     nom = models.CharField(max_length=100)
     prix_de_vente = models.IntegerField()
@@ -113,9 +132,11 @@ class Produit(models.Model):
     nombre_par_palette = models.IntegerField()
     operations = models.ManyToManyField(Operation)
 
-
     def __str__(self):
         return str(self.nom)
+
+    def costs(self):
+        return sum(operation.costs() for operation in self.operations.all())
 
 
 class QuantiteProduit(models.Model):
@@ -124,16 +145,22 @@ class QuantiteProduit(models.Model):
         Produit,
         on_delete=models.PROTECT,
     )
+
     def __str__(self):
         return f"{self.produit} x {self.nombre}"
+
+    def costs(self):
+        return self.nombre * self.produit.costs()
 
 class Stock(models.Model):
     quantite_produits = models.ManyToManyField(QuantiteProduit)
     palettes_max = models.IntegerField()
 
-
     def __str__(self):
         return f"Stock {self.pk}"
+
+    def costs(self):
+        return sum(qp.costs() for qp in self.quantite_produits.all())
 
 
 class PointDeVente(models.Model):
@@ -151,6 +178,9 @@ class PointDeVente(models.Model):
     def __str__(self):
         return self.nom
 
+    def costs(self):
+        return self.lieu.costs() + self.stock.costs()
+
 
 class Facture(models.Model):
     quantite_produits = models.ManyToManyField(QuantiteProduit)
@@ -164,6 +194,8 @@ class Facture(models.Model):
     def __str__(self):
         return f"Facture {self.pk} - {self.client}"
 
+    def costs(self):
+        return sum(qp.costs() for qp in self.quantite_produits.all()) - self.reduction
 
 
 class PrixProduit(models.Model):
@@ -176,9 +208,16 @@ class PrixProduit(models.Model):
     def __str__(self):
         return f"{self.produit} - {self.prix_achat}"
 
+    def costs(self):
+        return self.prix_achat
+
 
 class Fournisseur(models.Model):
     nom = models.CharField(max_length=100)
     prix_produits = models.ManyToManyField(PrixProduit)
+
     def __str__(self):
         return self.nom
+
+    def costs(self):
+        return sum(pp.costs() for pp in self.prix_produits.all())
