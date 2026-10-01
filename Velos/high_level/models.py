@@ -19,7 +19,7 @@ class Ville(models.Model):
         on_delete=models.PROTECT,
     )
     prix_m2 = models.FloatField()
-    taxe_immobiliere = models.FloatField()
+    texe_immobiliere = models.FloatField()
 
     def __str__(self):
         return self.nom
@@ -68,7 +68,7 @@ class Lieu(models.Model):
 
     def costs(self):
         return (
-            self.superficie * (self.ville.prix_m2 + self.ville.taxe_immobiliere)
+            self.superficie * (self.ville.prix_m2 + self.ville.texe_immobiliere)
             + self.consommation_electrique * self.ville.pays.tarif_electrique
             + sum(qm.costs() for qm in self.quantite_machines.all())
         )
