@@ -11,6 +11,16 @@ class Pays(models.Model):
         return self.nom
 
 
+    def json(self):
+        return {
+            "id": self.pk,
+            "nom": self.nom,
+            "tva": self.tva,
+            "tarif_electrique": self.tarif_electrique,
+            "salaire_minimum": self.salaire_minimum,
+        }
+
+
 
 class Ville(models.Model):
     nom = models.CharField(max_length=100)
@@ -23,6 +33,15 @@ class Ville(models.Model):
 
     def __str__(self):
         return self.nom
+
+    def json(self):
+        return {
+            "id": self.pk,
+            "nom": self.nom,
+            "pays": self.pays.pk,
+            "prix_m2": self.prix_m2,
+            "texe_immobiliere": self.texe_immobiliere,
+        }
 
 
 class Machine(models.Model):
@@ -38,6 +57,17 @@ class Machine(models.Model):
     def costs(self):
         return self.prix + self.cout_maintenance
 
+    def json(self):
+        return {
+            "id": self.pk,
+            "nom": self.nom,
+            "prix": self.prix,
+            "duree_de_vie": self.duree_de_vie,
+            "cout_maintenance": self.cout_maintenance,
+            "superficie": self.superficie,
+        }
+
+
 
 class QuantiteMachine(models.Model):
     nombre = models.IntegerField()
@@ -51,6 +81,13 @@ class QuantiteMachine(models.Model):
 
     def costs(self):
         return self.nombre * self.machine.costs()
+    def json(self):
+        return {
+            "id": self.pk,
+            "nombre": self.nombre,
+            "machine": self.machine.pk,
+        }
+
 
 
 class Lieu(models.Model):
@@ -72,6 +109,19 @@ class Lieu(models.Model):
             + self.consommation_electrique * self.ville.pays.tarif_electrique
             + sum(qm.costs() for qm in self.quantite_machines.all())
         )
+
+    def json(self):
+        return {
+            "id": self.pk,
+            "nom": self.nom,
+            "ville": self.ville.pk,
+            "superficie": self.superficie,
+            "quantite_machines": list(
+                self.quantite_machines.values_list("pk", flat=True)
+            ),
+            "consommation_electrique": self.consommation_electrique,
+        }
+
 
 
 class Transport(models.Model):
@@ -95,6 +145,19 @@ class Transport(models.Model):
 
     def costs(self):
         return self.cout * self.nombre_palettes
+
+
+    def json(self):
+        return {
+            "id": self.pk,
+            "nombre_palettes": self.nombre_palettes,
+            "cout": self.cout,
+            "delai": self.delai,
+            "depart": self.depart.pk,
+            "arrivee": self.arrivee.pk,
+        }
+
+
 
 class Operation(models.Model):
     nom = models.CharField(max_length=100)
@@ -125,6 +188,21 @@ class Operation(models.Model):
     def costs(self):
         return self.cout + self.heures_de_travail * self.consommation_electrique
 
+    def json(self):
+        return {
+            "id": self.pk,
+            "nom": self.nom,
+            "operation_suivante": self.operation_suivante_id,
+            "cout": self.cout,
+            "machine": self.machine.pk,
+            "quantite_produits": self.quantite_produits_id,
+            "heures_de_travail": self.heures_de_travail,
+            "consommation_electrique": self.consommation_electrique,
+        }
+
+
+
+
 class Produit(models.Model):
     nom = models.CharField(max_length=100)
     prix_de_vente = models.IntegerField()
@@ -137,6 +215,23 @@ class Produit(models.Model):
 
     def costs(self):
         return sum(operation.costs() for operation in self.operations.all())
+
+
+    def json(self):
+        return {
+            "id": self.pk,
+            "nom": self.nom,
+            "prix_de_vente": self.prix_de_vente,
+            "duree_de_vie": self.duree_de_vie,
+            "nombre_par_palette": self.nombre_par_palette,
+            "operations": list(
+                self.operations.values_list("pk", flat=True)
+            ),
+        }
+
+
+
+
 
 
 class QuantiteProduit(models.Model):
@@ -152,6 +247,17 @@ class QuantiteProduit(models.Model):
     def costs(self):
         return self.nombre * self.produit.costs()
 
+
+
+    def json(self):
+        return {
+            "id": self.pk,
+            "nombre": self.nombre,
+            "produit": self.produit.pk,
+        }
+
+
+
 class Stock(models.Model):
     quantite_produits = models.ManyToManyField(QuantiteProduit)
     palettes_max = models.IntegerField()
@@ -161,6 +267,15 @@ class Stock(models.Model):
 
     def costs(self):
         return sum(qp.costs() for qp in self.quantite_produits.all())
+
+    def json(self):
+        return {
+            "id": self.pk,
+            "quantite_produits": list(
+                self.quantite_produits.values_list("pk", flat=True)
+            ),
+            "palettes_max": self.palettes_max,
+        }   
 
 
 class PointDeVente(models.Model):
@@ -181,6 +296,15 @@ class PointDeVente(models.Model):
     def costs(self):
         return self.lieu.costs() + self.stock.costs()
 
+    def json(self):
+        return {
+            "id": self.pk,
+            "nom": self.nom,
+            "lieu": self.lieu.pk,
+            "heures_de_travail": self.heures_de_travail,
+            "stock": self.stock.pk,
+        }
+
 
 class Facture(models.Model):
     quantite_produits = models.ManyToManyField(QuantiteProduit)
@@ -198,6 +322,18 @@ class Facture(models.Model):
         return sum(qp.costs() for qp in self.quantite_produits.all()) - self.reduction
 
 
+    def json(self):
+        return {
+            "id": self.pk,
+            "quantite_produits": list(
+                self.quantite_produits.values_list("pk", flat=True)
+            ),
+            "reduction": self.reduction,
+            "point_de_vente": self.point_de_vente.pk,
+            "client": self.client,
+        }
+
+
 class PrixProduit(models.Model):
     prix_achat = models.IntegerField()
     produit = models.ForeignKey(
@@ -211,6 +347,13 @@ class PrixProduit(models.Model):
     def costs(self):
         return self.prix_achat
 
+    def json(self):
+        return {
+            "id": self.pk,
+            "prix_achat": self.prix_achat,
+            "produit": self.produit.pk,
+        }
+
 
 class Fournisseur(models.Model):
     nom = models.CharField(max_length=100)
@@ -221,3 +364,12 @@ class Fournisseur(models.Model):
 
     def costs(self):
         return sum(pp.costs() for pp in self.prix_produits.all())
+        
+    def json(self):
+        return {
+            "id": self.pk,
+            "nom": self.nom,
+            "prix_produits": list(
+                self.prix_produits.values_list("pk", flat=True)
+            ),
+        }
